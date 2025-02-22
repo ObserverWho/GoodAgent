@@ -1,38 +1,36 @@
-from config.settings import settings
-from agents.good_agent import initialize_agent
-from memory.conversation import create_memory
-from tools.web_search import setup_search_tool
-from tools.calculator import calculator_tool
-from tools.custom_tool import joke_tool
+from agents.weather_agent import build_react_agent
+from memory.conversation import build_react_memory
+from prompt.prompts import build_react_prompt
+from tools.get_current_weather import weather_tool
+
+
+def initialize_agent():
+    tools = [weather_tool]
+    memory = build_react_memory()
+    return build_react_agent(
+        tools=tools,
+        prompt=build_react_prompt(),
+        memory=memory,
+    )
+
 
 def main():
-    # 初始化工具集
-    tools = [
-        setup_search_tool(),
-        calculator_tool,
-        joke_tool
+    agent = initialize_agent()
+    questions = [
+        "北京现在多少度？",  # 应触发天气工具
+        # "把刚才说的城市换成广州",
+        # "写一首秋天的诗？",  # 直接LLM回答
+        # "帮我查一下杭州的天气",  # 明确触发工具
+        # "今天适合去杭州旅游吗？请先告诉我当地天气"  # 组合查询
     ]
 
-    # 创建记忆系统
-    memory = create_memory()
+    for q in questions:
+        print(f"\n用户问题: {q}")
+        result = agent.invoke({"input": q})
+        print(f"助理回答: {result['output']}\n{'-' * 50}")
+        print("\n📜 当前对话历史：")
+        print(agent.memory.buffer)  # 直接输出原始文本格式
 
-    # 初始化智能体
-    agent = initialize_agent(tools, memory)
-
-    # 交互循环
-    while True:
-        try:
-            query = input("\nUser: ")
-            if query.lower() in ['exit', 'quit']:
-                break
-
-            result = agent.invoke({"input": query})
-            print(f"\nAgent: {result['output']}")
-
-        except KeyboardInterrupt:
-            break
-        except Exception as e:
-            print(f"Error: {str(e)}")
 
 if __name__ == "__main__":
     main()
